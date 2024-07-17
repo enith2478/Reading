@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Graphic Novel</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .page-image {
+            width: 100%;
+            display: block;
+            margin-bottom: 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .chapter-select {
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        .loading {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 50px;
+        }
+        .page-number {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chapter-select">
+            <select id="chapter-dropdown">
+                <option value="1">Chapter 1</option>
+                <option value="2">Chapter 2</option>
+                <option value="3">Chapter 3</option>
+            </select>
+        </div>
+        <div id="comic-container"></div>
+        <div class="page-number" id="page-number"></div>
+        <div class="navigation">
+            <button id="prev-btn">Previous</button>
+            <button id="next-btn">Next</button>
+        </div>
+    </div>
+
+    <script>
+        const comicContainer = document.getElementById('comic-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const chapterDropdown = document.getElementById('chapter-dropdown');
+        const pageNumberDisplay = document.getElementById('page-number');
+
+        let currentChapter = 1;
+        let currentPage = 1;
+        let totalPages = 10; // Default, will be updated when changing chapters
+        const chaptersInfo = {
+            1: { pages: 10 },
+            2: { pages: 15 },
+            3: { pages: 12 }
+        };
+
+        function preloadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = url;
+            });
+        }
+
+        async function loadPage(chapter, pageNumber) {
+            comicContainer.innerHTML = '<div class="loading">Loading...</div>';
+            try {
+                const img = await preloadImage(`chapters/chapter${chapter}/page${pageNumber}.jpg`);
+                comicContainer.innerHTML = '';
+                img.alt = `Chapter ${chapter}, Page ${pageNumber}`;
+                img.className = 'page-image';
+                comicContainer.appendChild(img);
+                pageNumberDisplay.textContent = `Page ${pageNumber} of ${totalPages}`;
+            } catch (error) {
+                comicContainer.innerHTML = '<div class="loading">Error loading image</div>';
+            }
+        }
+
+        function updateButtons() {
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage === totalPages;
+        }
+
+        function changeChapter() {
+            currentChapter = parseInt(chapterDropdown.value);
+            totalPages = chaptersInfo[currentChapter].pages;
+            currentPage = 1;
+            loadPage(currentChapter, currentPage);
+            updateButtons();
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadPage(currentChapter, currentPage);
+                updateButtons();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadPage(currentChapter, currentPage);
+                updateButtons();
+            }
+        });
+
+        chapterDropdown.addEventListener('change', changeChapter);
+
+        // Initial load
+        changeChapter();
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' && currentPage > 1) {
+                currentPage--;
+                loadPage(currentChapter, currentPage);
+                updateButtons();
+            } else if (e.key === 'ArrowRight' && currentPage < totalPages) {
+                currentPage++;
+                loadPage(currentChapter, currentPage);
+                updateButtons();
+            }
+        });
+    </script>
+</body>
+</html>
